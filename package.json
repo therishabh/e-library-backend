@@ -1,0 +1,19 @@
+{
+  "name": "e-library",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "Rishabh Agrawal",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon server.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^7.0.2"
+  }
+}
