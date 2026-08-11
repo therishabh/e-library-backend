@@ -11,6 +11,7 @@
     "dev": "tsx watch server.ts"
   },
   "devDependencies": {
+    "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.6",
     "@types/node": "^26.2.0",
     "nodemon": "^3.1.14",
@@ -20,6 +21,7 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "dotenv": "^17.4.2",
     "express": "^5.2.1"
   }
 }
