@@ -103,6 +103,14 @@ const globalErrorHandler = (err: HttpError, req: Request, res: Response, next: N
         // header me already hota hai), taki jo bhi client sirf response
         // body parse kar raha ho, use bhi status code easily mil jaye.
         statusCode: statusCode,
+
+        // "details" — optional field-wise info (jaise express-validator se
+        // aayi validation errors: { field: "email", message: "..." }[]).
+        // "createHttpError(400, msg, { details })" jaisi call se yeh
+        // property error object par set hoti hai. Agar kisi error me yeh
+        // set nahi hai, to "undefined" jayega aur JSON.stringify ise
+        // response se automatically drop kar dega.
+        details: (err as HttpError & { details?: unknown }).details,
     });
 };
 
