@@ -62,6 +62,11 @@ const bookSchema = new mongoose.Schema<Book>(
             type: Number,
             required: false,
         },
+        coverImage: {
+            type: String,
+            required: false,
+            trim: true,
+        },
         addedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",

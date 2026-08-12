@@ -11,5 +11,10 @@ export interface Book {
     genre?: string | undefined;
     isbn?: string | undefined;
     publishedYear?: number | undefined;
+    // Yaha actual image FILE store nahi kar rahe — sirf uska URL (string)
+    // store karte hain. Image khud kisi image-hosting service (Cloudinary,
+    // S3, ya koi bhi CDN) par upload hoti hai, aur wahi service jo URL
+    // deta hai, wo humein bhej diya jata hai.
+    coverImage?: string | undefined;
     addedBy: mongoose.Types.ObjectId;
 }

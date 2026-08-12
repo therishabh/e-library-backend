@@ -75,7 +75,7 @@ E-Library ka backend — Node.js + Express + TypeScript + MongoDB (Mongoose) se 
 - `src/users/users.route.ts` mein naye routes wire kiye — `/me` wale saare routes `authenticate` middleware se protected hain.
 
 ### 9. Books module — full CRUD
-- `src/books/books.types.ts` — `Book` interface (`title`, `author`, optional `description`/`genre`/`isbn`/`publishedYear`, aur `addedBy` — jisne book add ki thi uski user id).
+- `src/books/books.types.ts` — `Book` interface (`title`, `author`, optional `description`/`genre`/`isbn`/`publishedYear`/`coverImage`, aur `addedBy` — jisne book add ki thi uski user id). `coverImage` sirf ek URL (string) hai — actual image kisi hosting service (Cloudinary/S3/CDN) par upload hoti hai, hum bas uska link store karte hain, koi file upload nahi karte.
 - `src/books/books.model.ts` — Mongoose schema. `isbn` par `unique: true` ke saath `sparse: true` bhi lagaya hai — isse bina isbn wali kitni bhi books allow rehti hain (sirf jinke paas actual isbn value hai, unhi ke beech duplicate check hota hai). `addedBy` field `User` model ka reference hai (`populate()` se book ke saath uske creator ka naam/email bhi mil jata hai).
 - `src/books/books.validator.ts` — create ke liye `title`/`author` required, baaki sab optional; update ke liye sab kuch optional. `bookIdParamValidationRules` route ke `:id` param ko `isMongoId()` se validate karta hai, taki galat-format id par Mongoose ka raw `CastError` (jo 500 ban jata) na aakar clean `400` mile.
 - `src/books/books.controller.ts` mein controllers:

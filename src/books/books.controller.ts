@@ -12,7 +12,7 @@ import bookModel from "./books.model";
  * banda ke naam se book add karwa sakta tha.
  */
 const createBook = async (req: Request, res: Response, next: NextFunction) => {
-    const { title, author, description, genre, isbn, publishedYear } = req.body;
+    const { title, author, description, genre, isbn, publishedYear, coverImage } = req.body;
 
     // "authenticate" middleware isse pehle hi chal chuka hota hai, isliye
     // yeh practically hamesha set hota hai. TypeScript ke liye `req.userId`
@@ -32,6 +32,7 @@ const createBook = async (req: Request, res: Response, next: NextFunction) => {
             genre,
             isbn,
             publishedYear,
+            coverImage,
             addedBy: req.userId,
         });
 
@@ -90,7 +91,7 @@ const getBookById = async (req: Request, res: Response, next: NextFunction) => {
  * daali hui book edit kar deta.
  */
 const updateBook = async (req: Request, res: Response, next: NextFunction) => {
-    const { title, author, description, genre, isbn, publishedYear } = req.body;
+    const { title, author, description, genre, isbn, publishedYear, coverImage } = req.body;
 
     if (!req.userId) {
         return next(createHttpError(401, "Authentication required."));
@@ -112,6 +113,7 @@ const updateBook = async (req: Request, res: Response, next: NextFunction) => {
         if (genre !== undefined) book.genre = genre;
         if (isbn !== undefined) book.isbn = isbn;
         if (publishedYear !== undefined) book.publishedYear = publishedYear;
+        if (coverImage !== undefined) book.coverImage = coverImage;
 
         await book.save();
 

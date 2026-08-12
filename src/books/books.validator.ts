@@ -19,6 +19,11 @@ export const createBookValidationRules = [
 
     body("isbn").optional().trim().isISBN().withMessage("Please provide a valid ISBN."),
 
+    // "coverImage" ek image ka URL hai (image khud kisi hosting service —
+    // Cloudinary/S3/CDN — par upload hoti hai, hum sirf uska link store
+    // karte hain), isliye yaha ek proper URL format check kar rahe hain.
+    body("coverImage").optional().trim().isURL().withMessage("Cover image must be a valid URL."),
+
     body("publishedYear")
         .optional()
         .isInt({ min: 1000, max: new Date().getFullYear() })
@@ -37,6 +42,11 @@ export const updateBookValidationRules = [
     body("genre").optional().trim(),
 
     body("isbn").optional().trim().isISBN().withMessage("Please provide a valid ISBN."),
+
+    // "coverImage" ek image ka URL hai (image khud kisi hosting service —
+    // Cloudinary/S3/CDN — par upload hoti hai, hum sirf uska link store
+    // karte hain), isliye yaha ek proper URL format check kar rahe hain.
+    body("coverImage").optional().trim().isURL().withMessage("Cover image must be a valid URL."),
 
     body("publishedYear")
         .optional()
