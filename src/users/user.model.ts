@@ -7,6 +7,17 @@ export interface User {
     name: string;
     email: string;
     password: string;
+    // "forgot password" flow ke liye — hamesha HASHED token store karte hain
+    // (raw token sirf email me jata hai), taki DB leak hone par bhi koi
+    // active reset token use na kar sake. Dono fields optional hain kyuki
+    // zyadatar users ke liye yeh kabhi set hi nahi hongi.
+    // "| undefined" explicitly likha hai (sirf "?" kaafi nahi) kyuki
+    // tsconfig me "exactOptionalPropertyTypes" on hai — reset flow complete
+    // hone ke baad hum yeh fields explicitly `undefined` set karke clear
+    // karte hain (dekho resetPassword controller), aur us assignment ko
+    // valid banane ke liye type me `| undefined` hona zaroori hai.
+    resetPasswordToken?: string | undefined;
+    resetPasswordExpires?: Date | undefined;
 }
 
 const userSchema = new mongoose.Schema<User>(
@@ -25,6 +36,14 @@ const userSchema = new mongoose.Schema<User>(
             required: true,
             // Yaha hamesha PLAIN password nahi, HASHED password store hoga —
             // hashing controller me (bcrypt se) register ke time hoti hai.
+        },
+        resetPasswordToken: {
+            type: String,
+            required: false,
+        },
+        resetPasswordExpires: {
+            type: Date,
+            required: false,
         },
     },
     {

@@ -60,6 +60,20 @@ E-Library ka backend — Node.js + Express + TypeScript + MongoDB (Mongoose) se 
 - `app.ts` mein ek catch-all 404 handler add kiya — jo bhi route match na ho, uske liye bhi consistent JSON error (`404 Route not found`) milta hai, Express ke default HTML 404 page ke bajaye.
 - `users.validator.ts` mein password strength wali regex ka bug fix kiya — pehle wali regex (`/[A-Z][a-z][0-9]/`) sirf tabhi pass hoti thi jab uppercase-lowercase-digit **ek ke baad ek continuous sequence** mein ho. Ab lookahead-based regex use ki hai jo check karti hai ki teeno cheezein (uppercase, lowercase, digit) password mein **kahin bhi, kisi bhi order mein** hon.
 
+### 8. User module — profile, password change, forgot/reset password, account delete
+- `src/middlewares/authenticate.ts` — naya middleware jo `Authorization: Bearer <token>` header se JWT verify karta hai aur valid hone par `req.userId` set kar deta hai. Har "current logged-in user" wale route ke aage yehi middleware lagta hai.
+- `src/types/express.d.ts` — Express ke `Request` type ko augment kiya taki TypeScript ko `req.userId` ka pata rahe (ambient module declaration merging).
+- `src/users/user.model.ts` mein `resetPasswordToken` aur `resetPasswordExpires` (dono optional) fields add kiye — forgot-password flow ke liye.
+- `src/users/users.controller.ts` mein naye controllers add kiye:
+  - `getMe` — logged-in user ki profile return karta hai (`req.userId` se, password field query level pe hi exclude karke).
+  - `updateMe` — name/email update karta hai (dono optional), email change karne par duplicate-email check bhi karta hai (khud ko exclude karke, `$ne`).
+  - `changePassword` — current password verify karke naya password hash karta hai. Sirf JWT token hone se allow nahi karte — current password bhi maangte hain, taki leaked token se koi account "takeover" na kar sake.
+  - `forgotPassword` — email se user dhoondta hai, ek random reset token generate karta hai, uska **hash (SHA-256)** DB mein expiry (15 min) ke saath save karta hai. Abhi real email service wire nahi hai, isliye raw token console mein log hota hai (production ke liye TODO). Response hamesha same generic message deta hai — chahe email registered ho ya na ho, taki email enumeration na ho sake.
+  - `resetPassword` — raw token ko dobara hash karke DB ke stored hash se match karta hai; match aur unexpired hone par hi naya password set karta hai, aur token ko use ke baad turant clear kar deta hai (replay attack se bachne ke liye).
+  - `deleteMe` — logged-in user ka account permanently delete karta hai.
+- `src/users/users.validator.ts` mein naye validation rules add kiye: `updateProfileValidationRules`, `changePasswordValidationRules`, `forgotPasswordValidationRules`, `resetPasswordValidationRules`.
+- `src/users/users.route.ts` mein naye routes wire kiye — `/me` wale saare routes `authenticate` middleware se protected hain.
+
 ## Environment Variables
 
 `.env` file mein yeh variables chahiye (`.env.example` dekho):
@@ -80,8 +94,16 @@ npm run dev   # tsx watch mode se dev server start karta hai
 
 ## API Endpoints (abhi tak)
 
-| Method | Route                | Description              |
-|--------|-----------------------|---------------------------|
-| GET    | `/`                    | Welcome message           |
-| POST   | `/api/users/register`  | Naya user register karta hai, JWT token deta hai |
-| POST   | `/api/users/login`     | Existing user login karta hai, JWT token deta hai |
+| Method | Route                          | Auth required | Description              |
+|--------|----------------------------------|:---:|---------------------------|
+| GET    | `/`                              | ❌ | Welcome message           |
+| POST   | `/api/users/register`            | ❌ | Naya user register karta hai, JWT token deta hai |
+| POST   | `/api/users/login`               | ❌ | Existing user login karta hai, JWT token deta hai |
+| POST   | `/api/users/forgot-password`     | ❌ | Reset token generate karta hai (email/console) |
+| POST   | `/api/users/reset-password`      | ❌ | Token ke saath naya password set karta hai |
+| GET    | `/api/users/me`                  | ✅ | Logged-in user ki profile deta hai |
+| PATCH  | `/api/users/me`                  | ✅ | Logged-in user ka name/email update karta hai |
+| PATCH  | `/api/users/me/password`         | ✅ | Logged-in user ka password change karta hai |
+| DELETE | `/api/users/me`                  | ✅ | Logged-in user ka account delete karta hai |
+
+`✅` wale routes ke liye `Authorization: Bearer <token>` header bhejna zaroori hai (login/register se mila token).
