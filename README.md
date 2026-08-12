@@ -74,6 +74,17 @@ E-Library ka backend — Node.js + Express + TypeScript + MongoDB (Mongoose) se 
 - `src/users/users.validator.ts` mein naye validation rules add kiye: `updateProfileValidationRules`, `changePasswordValidationRules`, `forgotPasswordValidationRules`, `resetPasswordValidationRules`.
 - `src/users/users.route.ts` mein naye routes wire kiye — `/me` wale saare routes `authenticate` middleware se protected hain.
 
+### 9. Books module — full CRUD
+- `src/books/books.types.ts` — `Book` interface (`title`, `author`, optional `description`/`genre`/`isbn`/`publishedYear`, aur `addedBy` — jisne book add ki thi uski user id).
+- `src/books/books.model.ts` — Mongoose schema. `isbn` par `unique: true` ke saath `sparse: true` bhi lagaya hai — isse bina isbn wali kitni bhi books allow rehti hain (sirf jinke paas actual isbn value hai, unhi ke beech duplicate check hota hai). `addedBy` field `User` model ka reference hai (`populate()` se book ke saath uske creator ka naam/email bhi mil jata hai).
+- `src/books/books.validator.ts` — create ke liye `title`/`author` required, baaki sab optional; update ke liye sab kuch optional. `bookIdParamValidationRules` route ke `:id` param ko `isMongoId()` se validate karta hai, taki galat-format id par Mongoose ka raw `CastError` (jo 500 ban jata) na aakar clean `400` mile.
+- `src/books/books.controller.ts` mein controllers:
+  - `createBook` — `addedBy` hamesha `req.userId` se set karta hai, request body se kabhi nahi (warna koi user apne aap ko kisi aur ke naam se book add karwa sakta).
+  - `getBooks` / `getBookById` — public routes, login zaroori nahi.
+  - `updateBook` / `deleteBook` — ownership-checked: sirf wahi user jisne book add ki thi, usse update/delete kar sakta hai (`403` warna).
+- `app.ts` mein `/api/books` prefix pe naya router mount kiya.
+- `.env.example` ko actual use ho rahe env vars (`MONGO_URI`, `NODE_ENV`, `JWT_SECRET`, `JWT_EXPIRES_IN`) ke saath sync kiya — pehle sirf `PORT` tha.
+
 ## Environment Variables
 
 `.env` file mein yeh variables chahiye (`.env.example` dekho):
@@ -105,5 +116,10 @@ npm run dev   # tsx watch mode se dev server start karta hai
 | PATCH  | `/api/users/me`                  | ✅ | Logged-in user ka name/email update karta hai |
 | PATCH  | `/api/users/me/password`         | ✅ | Logged-in user ka password change karta hai |
 | DELETE | `/api/users/me`                  | ✅ | Logged-in user ka account delete karta hai |
+| GET    | `/api/books`                     | ❌ | Sabhi books ki list deta hai |
+| GET    | `/api/books/:id`                 | ❌ | Ek specific book uski id se deta hai |
+| POST   | `/api/books`                     | ✅ | Naya book add karta hai (`addedBy` = logged-in user) |
+| PATCH  | `/api/books/:id`                 | ✅ | Book update karta hai (sirf jisne add ki thi) |
+| DELETE | `/api/books/:id`                 | ✅ | Book delete karta hai (sirf jisne add ki thi) |
 
-`✅` wale routes ke liye `Authorization: Bearer <token>` header bhejna zaroori hai (login/register se mila token).
+`✅` wale routes ke liye `Authorization: Bearer <token>` header bhejna zaroori hai (login/register se mila token). Books ke PATCH/DELETE mein login ke alawa yeh bhi zaroori hai ki request bhejne wala wahi user ho jisne wo book add ki thi.
