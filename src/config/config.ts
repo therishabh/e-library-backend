@@ -1,12 +1,20 @@
-import { config as dotenvConfig } from 'dotenv';
+import { config as dotenvConfig } from "dotenv";
 dotenvConfig();
+
+const requireEnv = (key: string): string => {
+    const value = process.env[key];
+    if (!value) {
+        throw new Error(`Missing required environment variable: ${key}`);
+    }
+    return value;
+};
 
 const _config = {
     port: process.env.PORT || 3000,
-    databaseURL: process.env.MONGO_URI,
-    env: process.env.NODE_ENV || 'development',
-    jwtSecret: process.env.JWT_SECRET,
-    jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
-}
+    env: process.env.NODE_ENV || "development",
+    databaseURL: requireEnv("MONGO_URI"),
+    jwtSecret: requireEnv("JWT_SECRET"),
+    jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
+};
 
 export const config = Object.freeze(_config);
