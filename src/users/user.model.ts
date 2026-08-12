@@ -1,24 +1,5 @@
 import mongoose from "mongoose";
-
-// User document ki shape — TypeScript ko pata rahe ki ek User object me
-// kya-kya fields hongi (id apne aap Mongoose se milta hai, isliye separate
-// nahi likha).
-export interface User {
-    name: string;
-    email: string;
-    password: string;
-    // "forgot password" flow ke liye — hamesha HASHED token store karte hain
-    // (raw token sirf email me jata hai), taki DB leak hone par bhi koi
-    // active reset token use na kar sake. Dono fields optional hain kyuki
-    // zyadatar users ke liye yeh kabhi set hi nahi hongi.
-    // "| undefined" explicitly likha hai (sirf "?" kaafi nahi) kyuki
-    // tsconfig me "exactOptionalPropertyTypes" on hai — reset flow complete
-    // hone ke baad hum yeh fields explicitly `undefined` set karke clear
-    // karte hain (dekho resetPassword controller), aur us assignment ko
-    // valid banane ke liye type me `| undefined` hona zaroori hai.
-    resetPasswordToken?: string | undefined;
-    resetPasswordExpires?: Date | undefined;
-}
+import { User } from "./users.types";
 
 const userSchema = new mongoose.Schema<User>(
     {
