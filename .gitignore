@@ -3,3 +3,7 @@ node_modules/
 .DS_Store
 dist/
 *.log
+
+# User-uploaded book cover images (multer disk storage) — runtime data,
+# generated per-environment, isliye repo me commit nahi karte.
+uploads/

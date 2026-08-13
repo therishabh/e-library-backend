@@ -3,6 +3,37 @@ import createHttpError from "http-errors";
 import bookModel from "./books.model";
 
 /**
+ * HELPER: resolveCoverImage
+ *
+ * WHAT: Cover image do tariko se aa sakti hai —
+ *   1. Client ek actual FILE upload kare ("uploadCoverImage" middleware,
+ *      jo route par lagta hai, usse parse karke `req.file` par rakh deta
+ *      hai) — is case me hum URL khud construct karte hain.
+ *   2. Client seedha ek image URL (jaise kisi aur CDN par pehle se hosted
+ *      image) `coverImage` field me bhej de — humare validator (dekho
+ *      books.validator.ts) ne isko already ek valid URL hone ka check kar
+ *      liya hota hai.
+ *
+ * WHY dono support karte hain: Har client alag ho sakta hai — koi seedha
+ * device se file upload karega, koi pehle se hosted image ka URL bhejega.
+ * File upload ko priority dete hain (agar dono ek saath aa jayein, jo
+ * normally nahi hoga) kyuki wo zyada "authoritative" hai — humne khud
+ * usko validate/store kiya hai.
+ *
+ * "req.protocol" ("http"/"https") aur "req.get('host')" (jaise
+ * "localhost:8080") se hum current request ke hisaab se full absolute URL
+ * bana rahe hain — taki response me client ko seedha ek clickable/usable
+ * image URL mile, sirf relative path nahi.
+ */
+const resolveCoverImage = (req: Request): string | undefined => {
+    if (req.file) {
+        return `${req.protocol}://${req.get("host")}/uploads/covers/${req.file.filename}`;
+    }
+
+    return req.body.coverImage;
+};
+
+/**
  * POST /api/books
  *
  * WHAT: Naya book create karta hai. "authenticate" middleware pehle hi
@@ -12,7 +43,8 @@ import bookModel from "./books.model";
  * banda ke naam se book add karwa sakta tha.
  */
 const createBook = async (req: Request, res: Response, next: NextFunction) => {
-    const { title, author, description, genre, isbn, publishedYear, coverImage } = req.body;
+    const { title, author, description, genre, isbn, publishedYear } = req.body;
+    const coverImage = resolveCoverImage(req);
 
     // "authenticate" middleware isse pehle hi chal chuka hota hai, isliye
     // yeh practically hamesha set hota hai. TypeScript ke liye `req.userId`
@@ -91,7 +123,8 @@ const getBookById = async (req: Request, res: Response, next: NextFunction) => {
  * daali hui book edit kar deta.
  */
 const updateBook = async (req: Request, res: Response, next: NextFunction) => {
-    const { title, author, description, genre, isbn, publishedYear, coverImage } = req.body;
+    const { title, author, description, genre, isbn, publishedYear } = req.body;
+    const coverImage = resolveCoverImage(req);
 
     if (!req.userId) {
         return next(createHttpError(401, "Authentication required."));

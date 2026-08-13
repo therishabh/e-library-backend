@@ -75,7 +75,7 @@ E-Library ka backend — Node.js + Express + TypeScript + MongoDB (Mongoose) se 
 - `src/users/users.route.ts` mein naye routes wire kiye — `/me` wale saare routes `authenticate` middleware se protected hain.
 
 ### 9. Books module — full CRUD
-- `src/books/books.types.ts` — `Book` interface (`title`, `author`, optional `description`/`genre`/`isbn`/`publishedYear`/`coverImage`, aur `addedBy` — jisne book add ki thi uski user id). `coverImage` sirf ek URL (string) hai — actual image kisi hosting service (Cloudinary/S3/CDN) par upload hoti hai, hum bas uska link store karte hain, koi file upload nahi karte.
+- `src/books/books.types.ts` — `Book` interface (`title`, `author`, optional `description`/`genre`/`isbn`/`publishedYear`/`coverImage`, aur `addedBy` — jisne book add ki thi uski user id). `coverImage` ek URL (string) hai — ya to koi bahar ki hosted image ka URL, ya humare apne multer upload se generate hua URL (Step 11 dekho).
 - `src/books/books.model.ts` — Mongoose schema. `isbn` par `unique: true` ke saath `sparse: true` bhi lagaya hai — isse bina isbn wali kitni bhi books allow rehti hain (sirf jinke paas actual isbn value hai, unhi ke beech duplicate check hota hai). `addedBy` field `User` model ka reference hai (`populate()` se book ke saath uske creator ka naam/email bhi mil jata hai).
 - `src/books/books.validator.ts` — create ke liye `title`/`author` required, baaki sab optional; update ke liye sab kuch optional. `bookIdParamValidationRules` route ke `:id` param ko `isMongoId()` se validate karta hai, taki galat-format id par Mongoose ka raw `CastError` (jo 500 ban jata) na aakar clean `400` mile.
 - `src/books/books.controller.ts` mein controllers:
@@ -84,6 +84,17 @@ E-Library ka backend — Node.js + Express + TypeScript + MongoDB (Mongoose) se 
   - `updateBook` / `deleteBook` — ownership-checked: sirf wahi user jisne book add ki thi, usse update/delete kar sakta hai (`403` warna).
 - `app.ts` mein `/api/books` prefix pe naya router mount kiya.
 - `.env.example` ko actual use ho rahe env vars (`MONGO_URI`, `NODE_ENV`, `JWT_SECRET`, `JWT_EXPIRES_IN`) ke saath sync kiya — pehle sirf `PORT` tha.
+
+### 10. `coverImage` field books mein add kiya
+- `Book` type/schema/validator/controller sabme optional `coverImage` (URL string) field add kiya, taki book ke saath uska cover image bhi save ho sake.
+
+### 11. Multer — actual cover image file upload
+- `src/config/multer.ts` — multer ka configuration: `diskStorage` (files `uploads/covers/` folder mein, har file ka naam ek random `crypto.randomUUID()` se generate hota hai taki naam collide na karein), `fileFilter` (sirf JPEG/PNG/WEBP/GIF allow, SVG jaan-boojh kar block kyunki usme script chal sakti hai), aur `limits.fileSize` (5 MB cap, DoS se bachne ke liye).
+- `src/middlewares/uploadCoverImage.ts` — `upload.single("coverImage")` ko wrap karta hai taki multer ki apni `MulterError` (jaise file-size-limit) ko humare consistent `createHttpError`-based `400` response mein convert kar sake, warna wo `statusCode` na hone ki wajah se galti se `500` ban jati.
+- `src/books/books.controller.ts` mein `resolveCoverImage()` helper add kiya — agar client ne actual file upload ki hai (`req.file`), to uska public URL khud construct karta hai; warna client ke bheje hue `coverImage` URL string ko as-is use karta hai. Dono tareeke (file upload ya direct URL) supported hain.
+- `src/app.ts` mein `express.static` se `/uploads` folder ko publicly serve kiya, taki generated cover image URLs browser mein directly khul sakein.
+- `src/books/books.route.ts` mein `POST`/`PATCH` books routes par `uploadCoverImage` middleware add kiya — `authenticate` ke turant baad, validation rules se PEHLE (order zaroori hai: multer hi multipart body ko parse karke `req.body`/`req.file` populate karta hai, uske bina validator ko `req.body` khaali milega).
+- `uploads/` folder ko `.gitignore` mein add kiya — yeh runtime-generated data hai, repo mein commit nahi hota.
 
 ## Environment Variables
 
