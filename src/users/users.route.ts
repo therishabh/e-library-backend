@@ -19,11 +19,19 @@ import {
 } from "./users.validator";
 import validateRequest from "../middlewares/validateRequest";
 import authenticate from "../middlewares/authenticate";
+import authenticateLocal from "../middlewares/authenticateLocal";
 
 const userRouter = express.Router();
 
 userRouter.post("/register", registerValidationRules, validateRequest, registerUser);
-userRouter.post("/login", loginValidationRules, validateRequest, loginUser);
+
+// "loginValidationRules" + "validateRequest" pehle basic input shape check
+// karte hain (email/password present hain, email format sahi hai). Uske
+// baad "authenticateLocal" (Passport "local" strategy) actual credential
+// verification karta hai — email se user dhoondhna aur bcrypt se password
+// compare karna. Sirf tabhi "loginUser" controller chalta hai jab dono
+// steps pass ho jayein.
+userRouter.post("/login", loginValidationRules, validateRequest, authenticateLocal, loginUser);
 
 userRouter.post("/forgot-password", forgotPasswordValidationRules, validateRequest, forgotPassword);
 userRouter.post("/reset-password", resetPasswordValidationRules, validateRequest, resetPassword);

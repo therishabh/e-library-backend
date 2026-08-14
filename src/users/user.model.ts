@@ -1,5 +1,13 @@
-import mongoose from "mongoose";
+import mongoose, { HydratedDocument } from "mongoose";
 import { User } from "./users.types";
+
+// "HydratedDocument<User>" us actual object ka type hai jo Mongoose
+// query/create call se wapas milta hai — plain "User" interface se alag,
+// isme Mongoose ki extra cheezein bhi hoti hain (jaise `_id`, `.save()`,
+// `.toJSON()`, timestamps, etc.). Passport ke "req.user" ko type dene ke
+// liye yehi shape chahiye (dekho src/types/express.d.ts), isliye export
+// kar rahe hain.
+export type UserDocument = HydratedDocument<User>;
 
 const userSchema = new mongoose.Schema<User>(
     {

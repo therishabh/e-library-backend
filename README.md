@@ -9,6 +9,8 @@ E-Library ka backend — Node.js + Express + TypeScript + MongoDB (Mongoose) se 
 - **MongoDB + Mongoose** — database aur ODM.
 - **bcrypt** — password hashing.
 - **jsonwebtoken (JWT)** — login ke baad auth token issue karne ke liye.
+- **Passport.js (`passport-local`)** — login ke waqt email/password verify karne ke liye ek standardized strategy-based approach.
+- **multer** — book cover images ka actual file upload handle karne ke liye.
 - **express-validator** — request body validation.
 - **http-errors** — consistent HTTP errors banane ke liye (`createHttpError(404, "message")`).
 - **dotenv** — `.env` file se environment variables load karne ke liye.
@@ -95,6 +97,15 @@ E-Library ka backend — Node.js + Express + TypeScript + MongoDB (Mongoose) se 
 - `src/app.ts` mein `express.static` se `/uploads` folder ko publicly serve kiya, taki generated cover image URLs browser mein directly khul sakein.
 - `src/books/books.route.ts` mein `POST`/`PATCH` books routes par `uploadCoverImage` middleware add kiya — `authenticate` ke turant baad, validation rules se PEHLE (order zaroori hai: multer hi multipart body ko parse karke `req.body`/`req.file` populate karta hai, uske bina validator ko `req.body` khaali milega).
 - `uploads/` folder ko `.gitignore` mein add kiya — yeh runtime-generated data hai, repo mein commit nahi hota.
+
+### 12. Passport.js — "local" strategy se login
+- `src/config/passport.ts` — `passport-local` strategy register ki (`usernameField: "email"`). Verify callback wahi logic karta hai jo pehle `loginUser` controller ke andar tha (email se user dhoondna, `bcrypt.compare` se password verify karna), bas ab ek reusable Passport strategy ke andar hai.
+- `src/users/user.model.ts` mein `UserDocument` type export kiya (`HydratedDocument<User>`) — Passport ke `req.user` ko sahi type dene ke liye.
+- `src/types/express.d.ts` mein `Express.User` interface ko `UserDocument` se extend kiya (declaration merging) — isse `req.user` poore app mein type-safe ban gaya.
+- `src/middlewares/authenticateLocal.ts` — `passport.authenticate("local", { session: false }, callback)` ko wrap karta hai. `session: false` isliye kyuki app stateless hai (cookies/sessions use nahi karta, sirf JWT). Custom `callback` isliye diya taki Passport ka default `401` response na aakar, humara consistent `createHttpError`-based JSON error format use ho.
+- `src/users/users.controller.ts` ka `loginUser` ab simplify ho gaya — credential-verification logic hata diya (wo ab Passport strategy mein hai), controller sirf `req.user` (jo `authenticateLocal` ne set kiya) se JWT token generate karke bhejta hai.
+- `src/users/users.route.ts` mein `POST /login` route mein `authenticateLocal` middleware add kiya (`validateRequest` ke baad, `loginUser` se pehle).
+- `src/app.ts` mein `app.use(passport.initialize())` add kiya — Passport ke internal helpers (jaise `req.login`) ke liye zaroori, `passport.session()` NAHI (jo cookie-based sessions ke liye hota, humein nahi chahiye).
 
 ## Environment Variables
 

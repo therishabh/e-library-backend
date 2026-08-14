@@ -1,6 +1,7 @@
 import path from "path";
 import express from "express";
 import createHttpError from "http-errors";
+import passport from "./config/passport";
 import globalErrorHandler from "./middlewares/globalErrorHandler";
 import userRouter from "./users/users.route";
 import bookRouter from "./books/books.route";
@@ -8,6 +9,20 @@ import bookRouter from "./books/books.route";
 const app = express();
 
 app.use(express.json());
+
+// Passport ko har request ke saath kaam karne ke liye "initialize()"
+// middleware chahiye hota hai — yeh request object par Passport ke internal
+// helpers (jaise `req.login`) attach karta hai, jinke bina
+// "passport.authenticate(...)" (dekho middlewares/authenticateLocal.ts)
+// kaam nahi karega.
+//
+// NOTE: Yeh `passport.session()` NAHI hai — humein wo nahi chahiye. Woh
+// tab lagta hai jab tum COOKIE-based sessions use karte ho (login ke baad
+// server ek session ID cookie bhejta hai, aur user ka data server-side
+// session store mein rehta hai). Humara app poori tarah stateless hai —
+// har request apna JWT khud carry karti hai (Authorization header mein),
+// isliye session middleware ki zaroorat hi nahi.
+app.use(passport.initialize());
 
 // "uploadCoverImage" middleware (multer) uploaded book covers ko
 // "<project-root>/uploads/covers" folder me disk par save karta hai. Sirf

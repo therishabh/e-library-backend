@@ -3,7 +3,7 @@ import createHttpError from "http-errors";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import userModel from "./user.model";
+import userModel, { UserDocument } from "./user.model";
 import { config } from "../config/config";
 
 // bcrypt "salt rounds" — hashing algorithm ko kitni baar internally repeat
@@ -88,38 +88,29 @@ const registerUser = async (req: Request, res: Response, next: NextFunction) => 
 /**
  * POST /login
  *
- * WHAT: Existing user ko authenticate karta hai — (email, password) leta
- * hai, DB me user dhoondta hai, bcrypt se password compare karta hai, aur
- * match hone par ek naya JWT token issue karta hai.
+ * WHAT: Existing user ko login karta hai. Actual credential verification
+ * (email dhoondhna, bcrypt se password compare karna) ab is controller me
+ * NAHI hoti — wo kaam "authenticateLocal" middleware (Passport "local"
+ * strategy, dekho middlewares/authenticateLocal.ts aur config/passport.ts)
+ * route-level par pehle hi kar chuka hota hai, aur success hone par
+ * verified user ko `req.user` par attach kar deta hai. Yeh controller ab
+ * sirf ek kaam karta hai: usi verified user ke liye JWT token generate
+ * karke response bhejna.
  *
- * NOTE ON VALIDATION: "email/password required hain, email valid format
- * me ho" — yeh check route-level par ("loginValidationRules" +
- * "validateRequest", users.route.ts me) already ho chuka hota hai.
- *
- * WHY same error message for "user not found" and "wrong password":
- * Security best-practice — agar hum alag-alag message dete ("user nahi
- * mila" vs "password galat hai") to attacker ko pata chal jaata ki konsa
- * email registered hai (email enumeration attack). Isliye dono cases me
- * ek hi generic "Invalid email or password." message bhejte hain.
+ * WHY isse Passport ke through nikala: Pehle yeh sab logic (findOne +
+ * bcrypt.compare + generic "Invalid email or password." error, taaki
+ * email enumeration na ho) seedha is function ke andar tha. Ab wahi logic
+ * "config/passport.ts" ki strategy ke andar hai — controller "HOW to
+ * verify" se decouple ho gaya hai, sirf "verified user mil gaya, ab token
+ * do" wala kaam karta hai.
  */
 const loginUser = async (req: Request, res: Response, next: NextFunction) => {
-    const { email, password } = req.body;
-
     try {
-        // ---- FIND USER ----
-        const user = await userModel.findOne({ email });
-        if (!user) {
-            return next(createHttpError(401, "Invalid email or password."));
-        }
-
-        // ---- PASSWORD VERIFY ----
-        // "bcrypt.compare" plain password ko dobara hash karke, DB me stored
-        // hash ke saath compare karta hai — hum kabhi hash ko "decrypt"
-        // nahi karte, sirf compare karte hain.
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            return next(createHttpError(401, "Invalid email or password."));
-        }
+        // "authenticateLocal" middleware isse pehle hi "req.user" set kar
+        // chuka hota hai (agar yaha tak execution pahuchi hai, matlab
+        // authentication successful thi) — dekho
+        // src/types/express.d.ts me "Express.User" augmentation.
+        const user = req.user as UserDocument;
 
         // ---- GENERATE JWT TOKEN ----
         const token = generateToken(user._id.toString());

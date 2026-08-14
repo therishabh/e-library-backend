@@ -17,15 +17,28 @@
 // Isliye har controller/middleware mein `req.userId` bina kisi import ke
 // hi type-safe tarike se available hai.
 import "express";
+import { UserDocument } from "../users/user.model";
 
 // "authenticate" middleware JWT verify karne ke baad user ki id yahi
 // property par attach karta hai, taki protected route handlers (jaise
 // getMe/updateMe) seedha `req.userId` use kar sakein, bina dobara token
 // decode kiye.
+//
+// "Express.User" ek ALAG global interface hai jo khud "@types/passport"
+// package define karta hai — default me yeh EMPTY hoti hai
+// (`interface User {}`), taki Passport kisi bhi project mein "req.user"
+// ko generically use kar sake bina yeh jaane ki actual User shape kya hai.
+// Hum yaha declaration merging se isi interface ko apne "UserDocument"
+// shape se extend kar rahe hain, taki jab "passport-local" strategy
+// (config/passport.ts) `done(null, user)` call kare aur Passport use
+// `req.user` par attach kare, TypeScript ko turant pata ho ki
+// `req.user.email`, `req.user._id` waghera sab valid properties hain.
 declare global {
     namespace Express {
         interface Request {
             userId?: string;
         }
+
+        interface User extends UserDocument {}
     }
 }
